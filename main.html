@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<head>
+  <meta charset="utf-8" />
+  
+  <!-- Set the viewport width to device width for mobile -->
+  <meta name="viewport" content="width=device-width" />
+  
+  <title>FBTUC</title>
+  
+  <!-- Included CSS Files -->
+  <link rel="stylesheet" href="assets/stylesheets/foundation.css">
+  <link rel="stylesheet" href="assets/stylesheets/app.css">
+  
+  <script src="assets/javascripts/modernizr.foundation.js"></script>
+  <script src="assets/javascripts/mustache.js"></script>
+</head>
+  <body>
+    <!-- container -->
+    <div class="container">
+      <div class="row">
+        <div class="twelve columns">
+          <h2>Welcome to FBTUC <a href="#add_app" id="add_app" class="small blue button radius">Add app +</a> <a href="#remove_apps" id="remove_apps" class="small red button radius">Remove all apps</a></h2>
+          <p>This is version 1.0.0 was released today</p>
+          <hr />
+        </div>
+      </div><!-- row -->
+
+
+
+      <div class="row">
+        <div class="three columns">
+          <dl class="nice vertical tabs" id="apps"><!-- list of apps -->
+
+          </dl><!-- list of apps -->          
+        </div>
+
+
+        <div class="nine columns">
+          <ul class="nice tabs-content contained" id="apps">
+            <li class="active" id="defualtTab"><h4>no app selected</h4></li>
+            
+            
+          </ul>          
+                    
+          <hr />
+        </div>
+      </div><!-- row -->
+      
+      
+      
+      
+
+    </div>
+    <!-- container -->
+    
+    <!-- modals -->
+    <div id="modal">
+        
+      <div id="add_app" class="reveal-modal">
+        <div class="alert-box" style="display:none;"></div>
+        
+        <p class="lead">Please enter application information<p>
+        <p>all fields are required</p>
+        
+        <form class="nice">
+          <div class="form-field">
+            <input type="text" class="expand input-text" name="app_id" placeholder="App ID/API Key"  >
+            <small style="display:none;">this field is required</small>
+          </div>
+          
+          <div class="form-field">
+            <input type="text" class="expand input-text" name="app_secret" placeholder="App Secret" >
+            <small style="display:none;">this field is required</small>
+          </div>
+          
+          <input type="submit" id="submit" value="Add" class="small blue button radius">
+        </form>
+        
+        <a class="close-reveal-modal">&#215;</a>
+      </div><!-- add app -->
+    </div>    
+    <!-- modals -->
+  
+    <!-- Included JS Files -->
+    <script src="assets/javascripts/jquery.min.js"></script>
+    <script src="assets/javascripts/foundation.js"></script>
+    <script src="assets/javascripts/app.js"></script>
+  </body>
+</html>

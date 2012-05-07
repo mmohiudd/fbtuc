@@ -1,0 +1,19 @@
+{
+  "name": "FBTUC",
+  "version": "1.0",
+  "manifest_version": 2,
+  "description": "Manage Facebook test users for your application from one single place.",
+  "app": {
+      "launch": {
+      "local_path": "main.html"
+    }
+  },
+  "options_page": "options.html",
+  "permissions": [
+    "http://facebook.com",
+    "unlimitedStorage" // get more than 5MB
+  ],
+  "web_accessible_resources": [
+    "/assets/javascripts/mustache.js"
+  ]
+}
