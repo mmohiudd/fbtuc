@@ -144,10 +144,17 @@ function generate_app_page(app_id) {
 	var html = "";
 
 	block += '	<p>';
-	block += '		<a href="#'+app_id+'addUser" class="small blue button radius addUser" data-app_id="'+app_id+'" >Add user</a>';
-	block += '		<a href="#'+app_id+'removeUser" class="small red button radius removeUser" data-app_id="'+app_id+'" >Remove user</a>';
+	block += '		<a href="#'+app_id+'addUser" class="small blue button radius addUser" data-app_id="'+app_id+'" >Add user(s)</a>';
+	block += '		<a href="#'+app_id+'removeUser" class="small red button radius removeUser" data-app_id="'+app_id+'" >Remove user(s)</a>';
 	block += '		<a href="#'+app_id+'removeApp" class="small red button radius removeApp" data-app_id="'+app_id+'" >Remove app</a>';
 	block += '	</p>';
+	
+	
+	block += '	<p>';
+	block += '		<a href="#'+app_id+'selectAllUsers" class="selectAllUsers" data-app_id="'+app_id+'" >Select all users</a> | ';
+	block += '		<a href="#'+app_id+'unselectAllUsers" class="unselectAllUsers" data-app_id="'+app_id+'" >Unselect all users</a>';
+	block += '	</p>';
+	
 	block += '	<ul id="users">';
 	block += '		<li> ' + $loading + ' </li>';
 	block += '	</ul>';
@@ -183,6 +190,7 @@ function generate_users_list(app_id, users) {
 	var html = "";
 	
 	block += '<tr>';
+	block += '	<td><input type="checkbox" name="user_ids[]" value="{{id}}" /></td>';
 	block += '	<td>{{i}}</td>';
 	block += '	<td><a href="{{link}}" target="_blank"><img src="http://graph.facebook.com/{{id}}/picture" /></a></td>';
 	block += '	<td><a href="{{link}}" target="_blank">{{id}}</a></td>';
@@ -199,7 +207,8 @@ function generate_users_list(app_id, users) {
 	html +='<table>';
 	html +='  <thead>';
 	html +='    <tr>';
-	html +='      <li><th>&nbsp;&nbsp;&nbsp;</th>';
+	html +='      <th>&nbsp;&nbsp;&nbsp;</th>';
+	html +='      <th>&nbsp;&nbsp;&nbsp;</th>';
 	html +='      <th>Avatar</th>';
 	html +='      <th>ID</th>';
 	html +='      <th>Name</th>';
@@ -294,6 +303,48 @@ function get_users(app_id, access_token, success_callback, error_callback) {
 	}); // end of fb.api call
 }
 
+
+/**
+ * remove users from this application
+ * @var user_ids
+ * @var app_id
+ * @var access_token
+ * @var success_callback
+ * @var error_callback
+ */
+function remove_users(user_ids, app_id, access_token, success_callback, error_callback) {
+	var args = {
+		access_token	: access_token,
+		batch		: []
+	};
+    
+	
+	$.each(user_ids, function(i, user_id) {
+		args.batch.push({
+			access_token	:  access_token,
+			method        	: "DELETE",
+			relative_url  	: "/"+user_id
+		});
+		
+	});
+	
+	// make batch API call to get more information about this user. notice how we are submitting a POST to / 
+	fb.api("/", "POST", args, function(batch_response) { // success_callback
+		try{
+			success_callback(batch_response);
+		} catch(e){}
+		
+		
+	}, function(jqXHR, textStatus, errorThrown){ // error_callback 
+		var response_text = JSON.parse(jqXHR.responseText); 
+		
+		$.each(response_text.error, function(k, v) {
+			console.log(k + " : " + v);
+		});
+	}); // end of fb.api call
+
+}
+
 var $loading = '<div style="text-align: center;"><img src="assets/images/loading.gif"></div>'; // will display this HTML code while loading
 storage.ns = "fbtuc";
 
@@ -326,6 +377,28 @@ jQuery(document).ready(function ($) {
 		localStorage.removeItem("fbtuc");
 	});	
 	
+	$(document).on("click", ".selectAllUsers", function(e){
+		e.preventDefault();
+		
+		var app	 = storage.element.apps[$(this).data("app_id")];
+		var $checkboxes = $("#" + app.app_id + "Tab").find("input:checkbox");
+		
+		$.each($checkboxes, function(i, checkbox){
+			$(checkbox).attr('checked', true);
+		});
+		
+	});
+	
+	$(document).on("click", ".unselectAllUsers", function(e){
+		e.preventDefault();
+		var app	 = storage.element.apps[$(this).data("app_id")];
+		var $checkboxes = $("#" + app.app_id + "Tab").find("input:checkbox");
+		
+		$.each($checkboxes, function(i, checkbox){
+			$(checkbox).attr('checked', false);
+		});
+	});
+	
 	$(document).on("click", ".accessDetails", function(e){
 		e.preventDefault();
 		
@@ -337,19 +410,144 @@ jQuery(document).ready(function ($) {
 	
 	$(document).on("click", ".addUser", function(e){
 		e.preventDefault();
+		
+		// remove all messages from alert-box
+		var $alert_box = $("#modal #addUser").find('div.alert-box');
+		$alert_box.html('');
+		$alert_box.removeClass('error success');
+		$alert_box.hide();
+		
 		var app = storage.element.apps[$(this).data("app_id")]
 		
 		$("#modal #addUser #appName").html(app.name);
 		
+		var $form = $("#modal #addUser").find('form');
+		
+		var block = '<option value={{i}}>{{i}}</option>';
+		var html = '';
+		
+		html += block.replace(/{{i}}/g, 1);
+		
+		for(var i=5; i <= 45; i+=5) {
+			html += block.replace(/{{i}}/g, i);
+		}
+		
+		$("#modal #addUser select#n").html(html);
+		
+		$("#modal #addUser").find(':input[name="app_id"]').val(app.app_id);
+		$("#modal #addUser").find(':input[name="app_secret"]').val(app.app_secret);
+		$("#modal #addUser").find(':input[name="app_name"]').val(app.name);
+		
 		$("#modal #addUser").reveal();
 	});
 
+	$(document).on("click", ".removeUser", function(e){
+		e.preventDefault();
+		
+		var app	 = storage.element.apps[$(this).data("app_id")];
+		var user_ids = [];
+		
+		var $checkboxes = $("#" + app.app_id + "Tab").find("input:checkbox:checked");
+		
+		$.each($checkboxes, function(i, checkbox){
+			user_ids.push($(checkbox).val());
+		});
+		
+		
+		
+		if(user_ids.length>0) {
+			$("#"+app.app_id+"Tab ul#users li").html($loading);	
+			// check if selected users are more than 50?
+			if(user_ids.length>50){
+				var user_id_chunks = [];
+				
+				var c = 0;
+				user_id_chunks[0] = [];
+				$.each(user_ids, function(i, user_id){
+					
+					user_id_chunks[c].push(user_id);
+					
+					if(user_id_chunks[c].length>48){ // stop at the 49th element, 
+						c++;
+						user_id_chunks[c] = [];
+					}
+				});
+				
+				$.each(user_id_chunks, function(i, user_ids){
+					remove_users(user_ids, app.app_id, app.app_id+"|"+app.app_secret, function(response){
+						generate_app_page(app.app_id); // refresh this page
+					});					
+				});
 
+				
+			} else {
+
+				remove_users(user_ids, app.app_id, app.app_id+"|"+app.app_secret, function(response){
+					generate_app_page(app.app_id); // refresh this page
+				});				
+				
+			}	
+			
+						
+			
+							
+										
+							
+		}
+	});
 	
 	// add user to an app
 	$("#modal #addUser input#submit").on("click", function(e) {
 		e.preventDefault();
+		var $form = $(this).closest('form');
+		var $app_id = $form.find(':input[name="app_id"]');
+		var $app_secret = $form.find(':input[name="app_secret"]');
+		var $app_name = $form.find(':input[name="app_name"]');
+		var $alert_box = $form.siblings('div.alert-box');
 		
+		$alert_box.html('');
+		$alert_box.removeClass('error success');
+		$alert_box.hide();
+		
+		var $n = $form.find(':input[name="n"]');
+		
+		// make batch call to faecbook
+		var args = {
+		    access_token: $app_id.val() + "|" + $app_secret.val(),
+		    batch: []
+		};
+	    
+		
+		for(var i =0; i<$n.val(); i++) {
+			args.batch.push({
+				access_token	:  $app_id.val() + "|" + $app_secret.val(),
+				method        	: "POST",
+				relative_url  	: "/"+$app_id.val()+"/accounts/test-users"
+			});
+		}
+		
+		
+		$alert_box.html($loading);
+		$alert_box.show();
+		
+		// make batch API call to get more information about this user. notice how we are submitting a POST to / 
+		fb.api("/", "POST", args, function(batch_response) { // success_callback
+			try{
+				$alert_box.addClass('success');
+				$alert_box.html($n.val() + ' user(s) added to <em>' + $app_name.val() + '</em>.');
+				$alert_box.show();				
+				
+				generate_app_page($app_id.val()); // refresh this page
+			} catch(e){}
+			
+			
+		}, function(jqXHR, textStatus, errorThrown){ // error_callback 
+			var response_text = JSON.parse(jqXHR.responseText); 
+			
+			$.each(response_text.error, function(k, v) {
+				console.log(k + " : " + v);
+			});
+		}); // end of fb.api call
 	});
 		
 	
