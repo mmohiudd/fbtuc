@@ -87,12 +87,14 @@ var storage = {
 	}
 };
 
-
+/**
+ * generate left side list for the apps
+ */ 
 function generate_app_list() {
 	var block = "";	
 	var html = "";
 
-	block += '<dd><a href="#{{app_id}}"><img src="{{icon_url}}" /> {{name}}</a></dd>';
+	block += '<dd><a href="#{{app_id}}" data-app_id="{{app_id}}"><img src="{{icon_url}}" /> {{name}}</a></dd>';
 	
 	var apps = new Array();
 	
@@ -106,9 +108,9 @@ function generate_app_list() {
 	} catch(e){
 		$.each(apps, function(i, app) {
 			var dd = block;
-			dd = dd.replace("{{app_id}}", app.app_id);
-			dd = dd.replace("{{icon_url}}", app.icon_url);
-			dd = dd.replace("{{name}}", app.name);
+			dd = dd.replace(/{{app_id}}/g, app.app_id);
+			dd = dd.replace(/{{icon_url}}/g, app.icon_url);
+			dd = dd.replace(/{{name}}/g, app.name);
 			
 			html += dd;
 		});
@@ -118,31 +120,182 @@ function generate_app_list() {
 	
 	html = "";
 	block = "";
-	block += '<li id="{{app_id}}Tab">'+$loading+'</li>';
+	block += '<li id="{{app_id}}Tab" data-app_id="{{app_id}}">'+$loading+'</li>';
 	
 	try{
 		html = Mustache.render(block, {"apps" : '{{#apps}}' + apps + '{{/apps}}'});
 	} catch(e){
 		$.each(apps, function(i, app) {
 			var li = block;
-			li = li.replace("{{app_id}}", app.app_id);
-			
+			li = li.replace(/{{app_id}}/g, app.app_id);
 			html += li;
 		});		
-		
 	}
 	
 	$("ul#apps").append(html);
-	
-	
 }
 
 
+/**
+ * generate app page
+ */
+function generate_app_page(app_id) {
+	var block = "";	
+	var html = "";
+
+	block += '	<p>';
+	block += '		<a href="#'+app_id+'addUser" class="small blue button radius addUser" data-app_id="'+app_id+'" >Add user</a>';
+	block += '		<a href="#'+app_id+'removeUser" class="small red button radius removeUser" data-app_id="'+app_id+'" >Remove user</a>';
+	block += '		<a href="#'+app_id+'removeApp" class="small red button radius removeApp" data-app_id="'+app_id+'" >Remove app</a>';
+	block += '	</p>';
+	block += '	<ul id="users">';
+	block += '		<li> ' + $loading + ' </li>';
+	block += '	</ul>';
+	
+	html = block;
+	
+	$("#"+app_id+"Tab").html(html);
+	
+	// get all test users
+	var app = storage.element.apps[app_id];
+	get_users(app_id,  storage.element.apps[app_id].app_id + "|" + storage.element.apps[app_id].app_secret, function(users){
+		
+		if(users.length>0){
+			$("#"+app_id+"Tab ul#users li").html(generate_users_list(app_id, users));
+		} else{
+			$("#"+app_id+"Tab ul#users li").html("<h4><em>"+app.name+"</em> does not have any test users.");
+		}
+	}, function(jqXHR, textStatus, errorThrown) {
+	});
+}
+
+
+/**
+ * generate user table HTML
+ * 
+ * @var app_id int applciation ID
+ * @var users mixed users object
+ * @var limit limit user
+ * @var page int current page
+ */
+function generate_users_list(app_id, users) {
+	var block = "";	
+	var html = "";
+	
+	block += '<tr>';
+	block += '	<td>{{i}}</td>';
+	block += '	<td><a href="{{link}}" target="_blank"><img src="http://graph.facebook.com/{{id}}/picture" /></a></td>';
+	block += '	<td><a href="{{link}}" target="_blank">{{id}}</a></td>';
+	block += '	<td><a href="{{link}}" target="_blank">{{name}}</a></td>';
+	
+	block += '	<td><a href="#{{id}}AccessDetails" class="accessDetails" data-access_token="{{access_token}}" data-email={{email}}>Show</a>';
+	block += '	';
+
+	block += '	</td>';
+	
+	block += '	<td><a href="{{login_url}}" target="_blank">Login</a></td>';
+	block += '</tr>';
+		
+	html +='<table>';
+	html +='  <thead>';
+	html +='    <tr>';
+	html +='      <li><th>&nbsp;&nbsp;&nbsp;</th>';
+	html +='      <th>Avatar</th>';
+	html +='      <th>ID</th>';
+	html +='      <th>Name</th>';
+	html +='      <th>Access Details</th>';
+	html +='      <th>Login</th>';
+	html +='    </tr>';
+	html +='  </thead>';
+	html +='  <tbody>';
+	
+	try{
+		html += Mustache.render("{{#users}}" + block+ "{{/users}}", {users:users});
+	} catch(e){ 
+		$.each(users, function(i, user) {
+			var tr = block;
+			tr = tr.replace(/{{i}}/g, user.i);
+			tr = tr.replace(/{{link}}/g, user.link);
+			tr = tr.replace(/{{id}}/g, user.id);
+			tr = tr.replace(/{{name}}/g, user.name);
+			tr = tr.replace(/{{email}}/g, user.email);
+			tr = tr.replace(/{{access_token}}/g, user.access_token);
+			tr = tr.replace(/{{login_url}}/g, user.login_url);
+			
+			html += tr;
+		});		
+
+	}
+	
+	html +='  </tbody>';
+	html +='</table>';                  
+                  
+	return html;		
+}
+
+/**
+ * get test usres for this application
+ */
+function get_users(app_id, access_token, success_callback, error_callback) {
+	
+	var users       = {}; // to store user information
+        var user_info   = []; // array for mustache 
+        
+        var args = {
+            access_token: access_token,
+            batch: []
+        };
+    
+        args.batch.push({
+            method                      : "GET",
+            name                        : "get-users",
+            relative_url                : "/"+app_id+"/accounts/test-users?limit=500",
+            omit_response_on_success    : false
+        });
+
+        args.batch.push({
+            method        : "GET",
+            relative_url  : "?ids={result=get-users:$.data.*.id}"
+        });
+        
+	
+        // make batch API call to get more information about this user. notice how we are submitting a POST to / 
+	fb.api("", "POST", args, function(batch_response) { // success_callback
+		try{
+			//console.log(batch_response);
+			var body = JSON.parse(batch_response[0].body);  // we need to get user's access token
+			
+			$.each(body.data, function(i, user){
+				users[user.id] = user;    // push to users object with id being the key
+				users[user.id].i = (i+1);
+			});
+			
+			body = JSON.parse(batch_response[1].body);
+				
+			$.each(body, function(id, user) {
+				$.each(user, function(k, v) { // get each peace 
+					users[id][k] = v; // update users object with id being the key
+				});
+				
+				user_info.push(users[id]); // push to user_info array
+			});
+		} catch(e){}
+		
+		try{ 
+			success_callback(user_info);	
+		} catch(e){}
+		
+	}, function(jqXHR, textStatus, errorThrown){ // error_callback 
+		var response_text = JSON.parse(jqXHR.responseText); 
+		
+		$.each(response_text.error, function(k, v) {
+			console.log(k + " : " + v);
+		});
+	}); // end of fb.api call
+}
+
 var $loading = '<div style="text-align: center;"><img src="assets/images/loading.gif"></div>'; // will display this HTML code while loading
 storage.ns = "fbtuc";
-
-
-
 
 jQuery(document).ready(function ($) {
 	
@@ -152,30 +305,56 @@ jQuery(document).ready(function ($) {
 		storage.element = {
 			//apps: new Array(),
 			apps: {},
-			settings: []
+			settings: {}
 		}
 		
 		// save the object
 		storage.save();
 	}
 	
-	
-	//console.log(storage.element);
-	
-	localStorage.removeItem("fbtuc");
-	//storage.__remove(storage.ns);
-	
 	// generate the list of apps
 	generate_app_list();
 
 	/// add an app
-	$("a#add_app").on("click", function(e){
+	$("a#addApp").on("click", function(e){
 		e.preventDefault();
-		$("#modal #add_app").reveal();
+		$("#modal #addApp").reveal();
 	});
 	
+	$("a#removeApps").on("click", function(e){
+		e.preventDefault();
+		localStorage.removeItem("fbtuc");
+	});	
+	
+	$(document).on("click", ".accessDetails", function(e){
+		e.preventDefault();
+		
+		$("#modal #accessDetails p#access_token").html($(this).data("access_token"));
+		$("#modal #accessDetails p#email").html($(this).data("email"))
+		
+		$("#modal #accessDetails").reveal();
+	});
+	
+	$(document).on("click", ".addUser", function(e){
+		e.preventDefault();
+		var app = storage.element.apps[$(this).data("app_id")]
+		
+		$("#modal #addUser #appName").html(app.name);
+		
+		$("#modal #addUser").reveal();
+	});
+
+
+	
+	// add user to an app
+	$("#modal #addUser input#submit").on("click", function(e) {
+		e.preventDefault();
+		
+	});
+		
+	
 	// save the app information
-	$("#modal #add_app input#submit").on("click", function(e){
+	$("#modal #addApp input#submit").on("click", function(e){
 		e.preventDefault();
 		var $form = $(this).closest('form');
 		var $app_id = $form.find(':input[name="app_id"]');
@@ -253,7 +432,7 @@ jQuery(document).ready(function ($) {
 	/* TABS --------------------------------- */
 	/* Remove if you don't need :) */
 	
-	function activateTab($tab) {
+	function activateTab($tab) { 
 		var $activeTab = $tab.closest('dl').find('a.active'),
 		contentLocation = $tab.attr("href") + 'Tab';
 		
@@ -267,6 +446,8 @@ jQuery(document).ready(function ($) {
 		//Show Tab Content
 		$(contentLocation).closest('.tabs-content').children('li').hide();
 		$(contentLocation).css('display', 'block');
+		
+		generate_app_page($tab.data("app_id"));
 	}
 	
 	$('dl.tabs').each(function () {

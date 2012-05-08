@@ -19,7 +19,7 @@
     <div class="container">
       <div class="row">
         <div class="twelve columns">
-          <h2>Welcome to FBTUC <a href="#add_app" id="add_app" class="small blue button radius">Add app +</a> <a href="#remove_apps" id="remove_apps" class="small red button radius">Remove all apps</a></h2>
+          <h2>Welcome to FBTUC <a href="#add_app" id="addApp" class="small blue button radius">Add app</a> <a href="#removeApps" id="remove_apps" class="small red button radius">Remove all apps</a></h2>
           <p>This is version 1.0.0 was released today</p>
           <hr />
         </div>
@@ -37,9 +37,7 @@
 
         <div class="nine columns">
           <ul class="nice tabs-content contained" id="apps">
-            <li class="active" id="defualtTab"><h4>no app selected</h4></li>
-            
-            
+            <li class="activex" id="defualtTab"><h4>no app selected</h4></li>
           </ul>          
                     
           <hr />
@@ -56,7 +54,8 @@
     <!-- modals -->
     <div id="modal">
         
-      <div id="add_app" class="reveal-modal">
+      <div id="addApp" class="reveal-modal">
+        <h2>Add app</h2>
         <div class="alert-box" style="display:none;"></div>
         
         <p class="lead">Please enter application information<p>
@@ -78,6 +77,49 @@
         
         <a class="close-reveal-modal">&#215;</a>
       </div><!-- add app -->
+    
+
+
+      <div id="addUser" class="reveal-modal">
+        <h2>Add user to <em><span id="appName"><span></em></h2>
+        <div class="alert-box" style="display:none;"></div>
+        
+        
+        <p>all fields are required</p>
+        
+        <form class="nice">
+          <div class="form-field">
+            <select name="n">
+              
+            </select>
+              
+            
+          </div>
+          
+          <input type="submit" id="submit" value="Add" class="small blue button radius">
+        </form>
+        
+        <a class="close-reveal-modal">&#215;</a>
+      </div><!-- add app -->
+
+
+
+
+
+      <div id="accessDetails" class="reveal-modal">
+        <h2>Access Details</h2>
+        
+        <p class="lead">Email:</p>
+        <p id="email"></p>
+        
+        <p class="lead">Access Token:</p>
+        <p id="access_token" style="overflow-x: scroll; padding-top:15px; padding-bottom:15px; "></p>
+        
+        
+        
+        <a class="close-reveal-modal">&#215;</a>
+      </div>
+    
     </div>    
     <!-- modals -->
   
